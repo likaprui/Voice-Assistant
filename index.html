@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ხმოვანი ასისტენტი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@500;600;700&family=Noto+Sans+Georgian:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f7fb;
+    --bg2:#eef0fb;
+    --panel:#ffffff;
+    --text:#1b1b23;
+    --sub:#8b8a97;
+    --line:rgba(20,20,30,.08);
+    --c1:#7c6cff;
+    --c2:#ef5da8;
+    --c3:#1fc9b7;
+    --c4:#ffab3d;
+    --display: "Noto Serif Georgian", "Space Grotesk", -apple-system, "Helvetica Neue", serif;
+    --body: "Noto Sans Georgian", "Inter", -apple-system, "Helvetica Neue", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(124,108,255,.10), transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(31,201,183,.10), transparent 42%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{
+    position:relative;
+    height:100vh; width:100vw;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6vh;
+    padding:24px;
+  }
+
+  .orb-wrap{
+    position:relative;
+    width:min(72vw,320px); height:120px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+
+  /* ---- waveform bars: the voice indicator ---- */
+  .bars{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    height:100%;
+  }
+  .bar{
+    width:9px;
+    height:20px;
+    border-radius:999px;
+    box-shadow:0 6px 16px -6px rgba(20,20,30,.18);
+    animation:bar-idle 2.6s ease-in-out infinite;
+    animation-delay:calc(var(--i) * .16s);
+    transition:background .6s ease;
+  }
+  .bar:nth-child(1){ background:linear-gradient(180deg, var(--c1), var(--c2)); }
+  .bar:nth-child(2){ background:linear-gradient(180deg, var(--c2), var(--c3)); }
+  .bar:nth-child(3){ background:linear-gradient(180deg, var(--c3), var(--c4)); }
+  .bar:nth-child(4){ background:linear-gradient(180deg, var(--c4), var(--c1)); }
+  .bar:nth-child(5){ background:linear-gradient(180deg, var(--c1), var(--c3)); }
+
+  @keyframes bar-idle{
+    0%,100%{ height:14px; opacity:.5; }
+    50%{ height:24px; opacity:.75; }
+  }
+  @keyframes bar-listen{
+    0%,100%{ height:18px; }
+    20%{ height:58px; }
+    40%{ height:28px; }
+    60%{ height:66px; }
+    80%{ height:22px; }
+  }
+  @keyframes bar-think{
+    0%,100%{ height:12px; }
+    50%{ height:38px; }
+  }
+  @keyframes bar-speak{
+    0%,100%{ height:20px; }
+    25%{ height:74px; }
+    50%{ height:34px; }
+    75%{ height:60px; }
+  }
+
+  .orb-wrap[data-state="idle"] .bar{ animation:bar-idle 2.6s ease-in-out infinite; animation-delay:calc(var(--i) * .16s); }
+  .orb-wrap[data-state="listening"] .bar{ animation:bar-listen .95s ease-in-out infinite; animation-delay:calc(var(--i) * .09s); }
+  .orb-wrap[data-state="thinking"] .bar{ animation:bar-think .65s ease-in-out infinite; animation-delay:calc(var(--i) * .08s); }
+  .orb-wrap[data-state="speaking"] .bar{ animation:bar-speak .5s ease-in-out infinite; animation-delay:calc(var(--i) * .07s); }
+  @media (prefers-reduced-motion: reduce){
+    .bar{ animation:none !important; height:22px !important; }
+  }
+
+  .texts{
+    width:100%; max-width:480px;
+    text-align:center;
+  }
+  #userText{
+    font-family:var(--body);
+    font-size:15.5px; color:var(--sub); min-height:22px; line-height:1.45;
+    opacity:0; transform:translateY(8px);
+  }
+  #userText.show{ animation:textIn .45s cubic-bezier(.22,1,.36,1) forwards; }
+  #assistantText{
+    font-family:var(--display);
+    font-size:19px; color:var(--text); min-height:26px; line-height:1.55; font-weight:600;
+    margin-top:12px;
+    opacity:0; transform:translateY(8px);
+  }
+  #assistantText.show{ animation:textIn .5s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes textIn{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="orb-wrap" id="orbWrap" data-state="idle">
+    <div class="bars">
+      <span class="bar" style="--i:0"></span>
+      <span class="bar" style="--i:1"></span>
+      <span class="bar" style="--i:2"></span>
+      <span class="bar" style="--i:3"></span>
+      <span class="bar" style="--i:4"></span>
+    </div>
+  </div>
+
+  <div class="texts">
+    <div id="userText">—</div>
+    <div id="assistantText">—</div>
+  </div>
+
+</div>
+
+<script>
+  (function(){
+  // ==========================================
+  // Insert your NEW, clean API Key here:
+  const GEMINI_API_KEY = "AQ.Ab8RN6Kx2Rh92ycbhJ3yPDYRSWfswAZAAEpBfAw--BmsXXhKQw"; 
+  // ==========================================
+
+  const orbWrap = document.getElementById('orbWrap');
+  const userTextEl = document.getElementById('userText');
+  const assistantTextEl = document.getElementById('assistantText');
+
+  let state = 'idle'; 
+  let sessionStarted = false;
+  let finalizeTimer = null;
+  let recognition = null;
+  let history = []; 
+
+  const STOP_WORDS_PAUSE_MS = 900; 
+
+  function setState(next){
+    state = next;
+    orbWrap.dataset.state = next;
+  }
+
+  function animateTextIn(el, text){
+    el.classList.remove('show');
+    el.textContent = text;
+    void el.offsetWidth; 
+    el.classList.add('show');
+  }
+
+  function buildRecognition(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return null;
+    
+    const r = new SR();
+    r.continuous = false; // Changed to false to prevent automated continuous firing loops
+    r.interimResults = true; 
+    r.lang = 'ka-GE';
+
+    r.onerror = (e) => {
+      if(e.error === 'aborted' || e.error === 'no-speech') return;
+      console.error('ამოცნობის შეცდომა:', e.error);
+    };
+
+    r.onend = () => {
+      // Only restart if the session is active and we aren't waiting for the AI response
+      if(sessionStarted && state === 'listening'){
+        try { r.start(); } catch(err){}
+      }
+    };
+
+    r.onresult = (event) => {
+      let interim = '', final = '';
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        const t = event.results[i][0].transcript;
+        if(event.results[i].isFinal) final += t;
+        else interim += t;
+      }
+      
+      const combined = (final + ' ' + interim).trim();
+      if(combined){
+        userTextEl.textContent = combined;
+        userTextEl.classList.add('show');
+        
+        if(state !== 'listening') setState('listening');
+        
+        clearTimeout(finalizeTimer);
+        finalizeTimer = setTimeout(() => {
+          if(state !== 'thinking'){
+            submitQuery(combined);
+          }
+        }, STOP_WORDS_PAUSE_MS);
+      }
+    };
+    return r;
+  }
+
+  function startSession(){
+    sessionStarted = true;
+    recognition = buildRecognition();
+    if(!recognition){
+      animateTextIn(assistantTextEl, 'ამ ბრაუზერს არ აქვს ხმის ამოცნობის მხარდაჭერა.');
+      return;
+    }
+    try {
+      setState('listening');
+      recognition.start();
+    } catch(err) {
+      animateTextIn(assistantTextEl, 'მიკროფონთან კავშირი ვერ დამყარდა.');
+    }
+  }
+
+  function stopSession(){
+    sessionStarted = false;
+    clearTimeout(finalizeTimer);
+    if(recognition){ try{ recognition.stop(); } catch(e){} }
+    setState('idle');
+  }
+
+  orbWrap.addEventListener('click', () => {
+    if(!sessionStarted) startSession();
+    else stopSession();
+  });
+
+  async function submitQuery(text){
+    if(!text) return;
+    if(!GEMINI_API_KEY || GEMINI_API_KEY.includes("YOUR_NEW_API_KEY")){
+      animateTextIn(assistantTextEl, 'შეცდომა: კოდში API Key არ არის შევსებული!');
+      return;
+    }
+
+    setState('thinking');
+    if(recognition) { try { recognition.stop(); } catch(e){} } // Explicitly stop listening during API call
+
+    history.push({ role: 'user', parts: [{ text }] });
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: history.slice(-8),
+          systemInstruction: {
+            parts: [{ text: "შენ ხარ მოკლე, ბუნებრივი ხმოვანი ასისტენტი სახელად ორბი. უპასუხე ყოველთვის ქართულად, 1-2 მოკლე წინადადებით. არ გამოიყენო მარკდაუნის ფორმატირება, მხოლოდ სუფთა ტექსტი." }]
+          },
+          generationConfig: { maxOutputTokens: 150 }
+        })
+      });
+
+      const rawText = await response.text();
+      let data = JSON.parse(rawText);
+
+      if(data.error) throw new Error(data.error.message || 'API Error');
+
+      const cand = (data.candidates || [])[0];
+      const parts = cand && cand.content && cand.content.parts ? cand.content.parts : [];
+      const reply = parts.map(p => p.text || '').join(' ').trim() || 'პასუხი ვერ მოიძებნა.';
+
+      history.push({ role: 'model', parts: [{ text: reply }] });
+      animateTextIn(assistantTextEl, reply);
+      
+      // Go back to listening mode and turn microphone back on
+      setState('listening');
+      if(sessionStarted && recognition) { try { recognition.start(); } catch(e){} }
+
+    } catch(err) {
+      animateTextIn(assistantTextEl, 'შეცდომა: ' + err.message);
+      setState('listening');
+      if(sessionStarted && recognition) { try { recognition.start(); } catch(e){} }
+    }
+  }
+})();
+</script>
+</body>
+</html>
